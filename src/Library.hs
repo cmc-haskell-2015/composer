@@ -539,3 +539,5 @@ song = melody
 	)]
 
 song1 = melodyUp song b3
+
+song2 = melodyDown song m2
