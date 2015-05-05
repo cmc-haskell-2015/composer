@@ -36,7 +36,7 @@ data Tonality = Tonality Letter Alteration Mode deriving (Show, Eq)
 data Note = Note Name Alteration deriving (Show)
 
 -- Составляющие такта.
-data Seq = NSeq (Maybe Note) Duration  deriving (Show)
+data Seq = NSeq (Maybe Note) Duration | NPlet [Note] Duration  deriving (Show)
 
 -- Такт.
 data Bar = Bar [Seq] deriving (Show)
@@ -330,11 +330,13 @@ noteDown (Note (Name (l, oct)) a) (DInterval int (i, j))
 nseqUp :: Seq -> DInterval -> Seq
 nseqUp (NSeq (Nothing) d) int = NSeq (Nothing) d
 nseqUp (NSeq (Just n) d) int = NSeq (Just (noteUp n int)) d
+nseqUp (NPlet x d) int = NPlet (map (\y -> noteUp y int) x) d
 
 -- Уменьшение -//-
 nseqDown :: Seq -> DInterval -> Seq
 nseqDown (NSeq (Nothing) d) int = NSeq (Nothing) d
 nseqDown (NSeq (Just n) d) int = NSeq (Just (noteDown n int)) d
+nseqDown (NPlet x d) int = NPlet (map (\y -> noteDown y int) x) d
 
 -- Увеличение такта на интервал
 barUp :: Bar -> DInterval -> Bar
@@ -441,6 +443,31 @@ b' oc = NSeq (Just (Note (Name (B, oc + 2)) Empty))
 r :: Duration -> Seq
 r = NSeq Nothing
 
+-- Генераторы нот в триолях, квартолях и т.д.
+aP :: Alteration -> Note 
+aP  alt = (Note (Name (A, 3)) alt)
+
+bP :: Alteration -> Note 
+bP  alt = (Note (Name (B, 3)) alt)
+
+cP :: Alteration -> Note 
+cP  alt = (Note (Name (C, 3)) alt)
+
+dP :: Alteration -> Note 
+dP  alt = (Note (Name (D, 3)) alt)
+
+eP :: Alteration -> Note 
+eP  alt = (Note (Name (E, 3)) alt)
+
+fP :: Alteration -> Note 
+fP  alt = (Note (Name (F, 3)) alt)
+
+gP :: Alteration -> Note 
+gP  alt = (Note (Name (G, 3)) alt)
+
+-- Генератор особых видов ритмического деления
+nPlet :: [Note] -> Duration -> Seq
+nPlet n d = (NPlet n d)
 
 
 -- Генератор последовательности тактов.
@@ -455,6 +482,7 @@ party (l, a, m) s bs = Party (Tonality l a m) (Size s) (bar bs)
 -- Генератор одноголосой мелодии.
 melody :: [((Letter, Alteration, Mode), (Int, Int), [[Seq]])] -> Melody
 melody ps = Melody (party's ps)
+
 -- Генератор последовательности одноголосых партий.
 party's  :: [((Letter, Alteration, Mode), (Int, Int), [[Seq]])] -> [Party]
 party's  [] = []
@@ -541,3 +569,5 @@ song = melody
 song1 = melodyUp song b3
 
 song2 = melodyDown song m2
+
+song3 = nPlet [gP Empty, eP Empty, eP Empty] 4
