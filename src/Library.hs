@@ -6,7 +6,7 @@ import Data.Foldable
 
 -- ---------- ОСНОВНЫЕ СТРУКТУРЫ ДАННЫХ (ЧАСТЬ 1) ----------
 -- Буква (латинское название ноты).
-data Letter = C | D | E | F | G | A | B deriving (Show, Eq, Ord)
+data Letter = C | D | E | F | G | A | B | R deriving (Show, Eq, Ord)
 -- Лад.
 data Mode = Major | Minor | Mempty deriving (Show, Eq)
 -- Размер такта.
