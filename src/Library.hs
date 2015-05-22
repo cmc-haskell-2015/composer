@@ -1,4 +1,7 @@
 {-# LANGUAGE TypeOperators #-}
+
+module Library where
+
 import Data.Monoid
 import Data.Foldable
 
