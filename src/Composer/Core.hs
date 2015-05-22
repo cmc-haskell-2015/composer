@@ -1,133 +1,10 @@
-{-# LANGUAGE TypeOperators #-}
-
 -- | ???
-module Library where
+module Composer.Core where
 
-import Data.Monoid
+import Composer.Types
+
 import Data.Foldable
-
--- * Основные структуры данных (часть 1)
-
--- | Буква (латинское название ноты).
-data Letter
-  = C   -- ^ ???
-  | D   -- ^ ???
-  | E   -- ^ ???
-  | F   -- ^ ???
-  | G   -- ^ ???
-  | A   -- ^ ???
-  | B   -- ^ ???
-  | R   -- ^ ???
-  deriving (Show, Eq, Ord)
-
--- | Лад.
-data Mode
-  = Major     -- ???
-  | Minor     -- ???
-  | Mempty    -- ???
-  deriving (Show, Eq)
-
--- | Размер такта.
-data Size = Size (Int, Int) deriving (Show, Eq)
-
--- | Имя ноты (БУКВА, ОКТАВА).
-data Name = Name (Letter, Int) deriving (Show)
-
--- | Продолжительность.
-data Duration = Int :/ Int deriving (Show)
-
-instance Num Duration where
-	(+) = undefined
-	(*) = error "nonsense"
-	signum = undefined
-	(-) = undefined
-	abs =  undefined
-	fromInteger n = (1 :/ fromInteger n)
-
--- * Основные структуры данных (часть 2)
-
--- | Альтерация.
-data Alteration = Diez | Bemol | DDiez | DBemol | Bekart | Empty deriving (Show, Eq)
-
--- | Тональность.
-data Tonality = Tonality Letter Alteration Mode deriving (Show, Eq)
-
--- | Нота.
-data Note = Note Name Alteration deriving (Show)
-
--- | Составляющие такта.
-data Seq
-  = NSeq (Maybe Note) Duration    -- ^ ???
-  | NPlet [Note] Duration         -- ^ ???
-  deriving (Show)
-
--- | Такт.
-data Bar = Bar [Seq] deriving (Show)
-
--- | Одноголосая партия.
-data Party = Party Tonality Size [Bar] | Error deriving (Show)
-
--- | Одноголосая мелодия.
-data Melody = Melody [Party] deriving (Show)
-
--- | Многоголосая мелодия.
-data Compose = Compose [Melody] deriving (Show)
-
--- | Диатонический интервал.
-data DInterval = DInterval IntervalName (Int, Int) deriving (Show)
-
--- | Названия диатонического интервала.
-data IntervalName
-  = Prima
-  | Secunda
-  | Tertia 
-  | Quarta
-  | Quinta 
-  | Sexta
-  | Septima 
-  | Octava
-  deriving (Show, Eq, Ord)
-
-instance Monoid Bar where
-	mempty = Bar mempty
-	mappend (Bar xs) (Bar ys) = Bar (xs <> ys)
-
-instance Monoid Party where
-	mempty = Party (Tonality C Empty Mempty) (Size (1, 1)) mempty
-	mappend (Party t1 s1 xs) (Party t2 s2 ys)
-		| (t1 == t2) && (s1 == s2) = Party t1 s1 (xs <> ys)
-		| otherwise = Error
-
-instance Monoid Melody where
-	mempty = Melody mempty
-	Melody xs `mappend` Melody ys = Melody (xs <> ys)
-
-instance Monoid Compose where
-	mempty = Compose mempty
-	mappend (Compose xs) (Compose ys) = Compose (xs <> ys)
-
-
-
--- * Вспомогательные структуры
-
--- | ???
-letters = [C, D, E, F, G, A, B]
-
--- | ???
-intervals = [Prima, Secunda, Tertia, Quarta, Quinta, Sexta, Septima, Octava]
-
--- * Вспомогательные ф-ции
-
--- | Индекс элемента в списке.
-position :: Eq a => a -> [a] -> Int -> Int
-position e (x : xs) n
-  | e == x    = n
-  | otherwise = position e xs (n + 1)
-
--- | Элемент списка по индексу.
-element :: Int -> [a] -> a
-element 0 (x : xs) = x
-element n (x : xs) = element (n - 1) xs
+import Data.Monoid
 
 -- * Функционал базы
 
@@ -415,34 +292,6 @@ composeUp (Compose c) int = Compose (map (\y -> melodyUp y int) c)
 composeDown :: Compose -> DInterval -> Compose
 composeDown (Compose c) int = Compose (map (\y -> melodyDown y int) c)
 
--- * Вывод на экран
-
--- | Вывод ноты.
-showNote :: Note -> (Letter, Int, Alteration)
-showNote (Note (Name (n, o)) a) = (n, o, a) 
-
--- | Вывод составляющих такта.
-showSeq :: Seq -> ([(Letter, Int, Alteration)], Duration)
-showSeq (NSeq (Just n) d) = ([showNote n], d)
-showSeq (NSeq (Nothing) d) = ([(R, 0, Empty)], d)
-showSeq (NPlet x d) = (map (\y -> showNote y) x, d)
-
--- | Вывод такта.
-showBar :: Bar -> [([(Letter, Int, Alteration)], Duration)]
-showBar (Bar x) = map (\y -> showSeq y) x
-
--- | Вывод партии.
-showParty :: Party -> ((Letter, Alteration, Mode), (Int, Int), [[([(Letter, Int, Alteration)], Duration)]])
-showParty (Party (Tonality l a m) (Size (i,j)) b) = ((l,a,m), (i,j), map (\y -> showBar y) b)
-
--- | Вывод одноголосой мелодии.
-showMelody :: Melody -> [((Letter, Alteration, Mode), (Int, Int), [[([(Letter, Int, Alteration)], Duration)]])]
-showMelody (Melody x) = map (\y -> showParty y) x
-
--- | Вывод композиции.
-showCompose :: Compose -> [[((Letter, Alteration, Mode), (Int, Int), [[([(Letter, Int, Alteration)], Duration)]])]]
-showCompose (Compose c) = map (\y -> showMelody y) c
-
 -- * Генераторы
 
 -- ** Генераторы нот 1-й октавы.
@@ -619,30 +468,24 @@ b7 = DInterval Septima (11, 2)
 ch8 :: DInterval
 ch8 = DInterval Octava (6, 1)
 
--- * Пример
-
--- | "Маленькой елочке холодно зимой".
-song = melody
-	[(
-		(C, Empty, Major), (2, 4),
-		[
-			[g 4, e 8, e 8],
-		    [g 4, e 8, e 8],
-		    [g 8, f 8, e 8, d 8],
-		    [c 4, r 4],
-		    [a 4, c' 2 8, a 8],
-		    [g 4, e 8, e 8],
-		    [g 8, f 8, e 8, d 8],
-		    [c 4, r 4]
-		]
-	)]
+-- * Вспомогательные структуры
 
 -- | ???
-song1 = melodyUp song b3
+letters = [C, D, E, F, G, A, B]
 
 -- | ???
-song2 = melodyDown song m2
+intervals = [Prima, Secunda, Tertia, Quarta, Quinta, Sexta, Septima, Octava]
 
--- | ???
-song3 = nPlet [gP Empty, eP Empty, eP Empty] 4
+-- * Вспомогательные ф-ции
+
+-- | Индекс элемента в списке.
+position :: Eq a => a -> [a] -> Int -> Int
+position e (x : xs) n
+  | e == x    = n
+  | otherwise = position e xs (n + 1)
+
+-- | Элемент списка по индексу.
+element :: Int -> [a] -> a
+element 0 (x : xs) = x
+element n (x : xs) = element (n - 1) xs
 

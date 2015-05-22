@@ -14,11 +14,14 @@ license-file:        LICENSE
 -- category:            
 build-type:          Simple
 extra-source-files:  README.md
+                   , examples/*.hs
 cabal-version:       >=1.10
 
 library
   exposed-modules:
-    Library
+    Composer.Core
+    Composer.Pretty
+    Composer.Types
   build-depends:       base >=4.6 && <4.8
   hs-source-dirs:      src
   default-language:    Haskell2010
